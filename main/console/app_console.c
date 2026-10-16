@@ -25,14 +25,12 @@ static int app_console_CmdVersion(int argc, char **argv)
     printf("IDF     : %s\n", esp_get_idf_version());
     return 0;
 }
-
 static int app_console_CmdRestart(int argc, char **argv)
 {
     printf("Restarting...\n");
     esp_restart();
     return 0;
 }
-
 static int app_console_CmdDebug(int argc, char **argv)
 {
     if (argc < 2) {
@@ -45,7 +43,6 @@ static int app_console_CmdDebug(int argc, char **argv)
     printf("Debug is now %s\n", g_bDebug ? "ON" : "OFF");
     return 0;
 }
-
 static int app_console_CmdHeap(int argc, char **argv)
 {
     size_t sram_free  = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
@@ -56,7 +53,6 @@ static int app_console_CmdHeap(int argc, char **argv)
     printf("External PSRAM Free: %u bytes\n", (unsigned int)psram_free);
     return 0;
 }
-
 static int app_console_CmdLS(int argc, char **argv)
 {
     DIR *pDir = opendir(DF_LITTLEFS_MOUNT_POINT);
@@ -103,7 +99,6 @@ static int app_console_CmdLS(int argc, char **argv)
 
     return 0;
 }
-
 static int app_console_CmdCat(int argc, char **argv)
 {
     if (argc < 2) {
@@ -132,7 +127,6 @@ static int app_console_CmdCat(int argc, char **argv)
 
     return 0;
 }
-
 static int app_console_CmdPlay(int argc, char **argv)
 {
     if (argc < 2) {
@@ -155,7 +149,6 @@ static int app_console_CmdPlay(int argc, char **argv)
 
     return 0;
 }
-
 static int app_console_CmdVolume(int argc, char **argv)
 {
     if (argc < 2) {
@@ -174,7 +167,6 @@ static int app_console_CmdVolume(int argc, char **argv)
     printf("Đã cài đặt âm lượng hệ thống: %.1f%%\n", fVol);
     return 0;
 }
-
 static int app_console_CmdBeep(int argc, char **argv)
 {
     int s32Freq = (argc > 1) ? atoi(argv[1]) : 2000;
@@ -185,7 +177,6 @@ static int app_console_CmdBeep(int argc, char **argv)
     app_speaker_PlayBeep(s32Freq, s32Dur, s32Vol);
     return 0;
 }
-
 #if DF_ENABLE_BLE_MESH
 static int app_console_CmdMesh(int argc, char **argv)
 {
@@ -201,6 +192,27 @@ static int app_console_CmdMeshReset(int argc, char **argv)
 {
     printf("Dang xoa thong tin Provisioning, thiet bi se khoi dong lai...\n");
     return (app_mesh_Reset() == ERROR_CODE_OK) ? 0 : 1;
+}
+static int app_console_CmdMeshSend(int argc, char **argv)
+{
+    if (argc < 3) {
+        printf("Su dung: meshsend <unicast_addr_hex> <0|1>\n");
+        printf("Vi du : meshsend 0x0003 1  (Gui lenh ON sang Node 0x0003)\n");
+        printf("        meshsend 0x0003 0  (Gui lenh OFF sang Node 0x0003)\n");
+        return 1;
+    }
+
+    uint16_t u16Dst = (uint16_t)strtoul(argv[1], NULL, 16);
+    uint8_t u8OnOff = (uint8_t)atoi(argv[2]);
+
+    int32_t s32Ret = app_mesh_SendOnOff(u16Dst, u8OnOff);
+    if (s32Ret == ERROR_CODE_OK) {
+        printf("Da gui lenh OnOff=%u toi 0x%04X thanh cong!\n", u8OnOff, u16Dst);
+        return 0;
+    } else {
+        printf("Gui lenh thất bại! Ma loi: %d\n", (int)s32Ret);
+        return 1;
+    }
 }
 #endif
 
@@ -304,6 +316,14 @@ static void app_console_RegisterCommands(void)
         .func    = &app_console_CmdMeshReset,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&stCmdMeshReset));
+
+    const esp_console_cmd_t stCmdMeshSend = {
+        .command = "meshsend",
+        .help    = "Gui lenh OnOff 0/1 toi Node/Group khac (meshsend <addr_hex> <0|1>)",
+        .hint    = NULL,
+        .func    = &app_console_CmdMeshSend,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&stCmdMeshSend));
 #endif
 }
 
